@@ -3,6 +3,7 @@
 import theano
 from theano import function, pp
 from theano import tensor as T
+import numpy as np
 
 ## Define sigmoid layer
 def sigmoid_layer(x,w):
@@ -40,31 +41,36 @@ def grad_desc(cost, theta):
 ## Declare variables
 
 ## input vector
-x = theano.dvector('x')
+x = T.dvector('x')
+
+## output vector (or value?)
+y = T.dscalar('y')
 
 ## weight matrix -- 
 ##     input features = 30, outputs to a 8-node hidden layer
 theta1 = theano.shared(np.array(np.random.rand(30,8), dtype=theano.config.floatX))
-theta2 = theano.shared(np.array(np.random.rand(9,1), dtype=theano.config.floatX))
+theta2 = theano.shared(np.array(np.random.rand(8,1), dtype=theano.config.floatX))
 
 
 ### hidden layer
 h = sigmoid_layer(x, theta1)
 
 ### output layer
-o = T.log(T.dot(h,theta2))
+o = T.sum(T.dot(h.T,theta2))
 
 ## State cost function
 cost = (o - y)**2
-f_cost = theano.function([x], cost, updates=[
+f_cost = theano.function([x,y], cost, updates=[
      (theta1, grad_desc(cost, theta1)),
      (theta2, grad_desc(cost, theta2))])
 f_overall = theano.function([x],o)
 
+print "got through the script without error..."
+
+##### TODO #####
 # Read in the the training data here.
-
-
 ## Output trained weights
-
+### print costs as iterate through training epochs
+###############
 
 
