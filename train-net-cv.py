@@ -68,10 +68,11 @@ f_overall = theano.function([x],o)
 #print "got through the script without error..."
 
 # Read in the training data here.
+import numpy as np
 from numpy import genfromtxt
 
 #### Manual: choose 1,2,3, or 4 here ####
-of_interest = 1
+of_interest = 4
 #########################################
 targets = {1: 'qty_amt', 2:'rev_amt', 3:'qty_share', 4:'rev_share'}
 
@@ -80,30 +81,51 @@ print "generating model for when the target is", targets[of_interest]
 data = genfromtxt('sampledata_%s.csv' % targets[of_interest],delimiter=',')
 
 data    = data[1:,2:]  # cut the header and the first two rows (identifiers)
+
+### filtering step
+print "filtering out %i zero rows" % (data[:,-2]<=0).sum()
+data    = data[np.where(data[:,-2]>0)]
+
+
 x_in    = data[:,:-2]  # rank bit-vectors
 y_out   = data[:,-2]   # the target variable
 #### TODO: involve the agg1 field at data[:,-1]
 
-x_valid = x_in[-1,:]   # keep one row for predicting an example output
-x_in    = x_in[:-1,:]  # remove validation row from input data
+split_point = data.shape[0]/3
 
+x_valid = x_in[-split_point:,:]   # keep one row for predicting an example output
+x_in    = x_in[:-split_point,:]  # remove validation row from input data
+y_valid = y_out[-split_point:]
+y_out   = y_out[:-split_point]
 
 ### Normalize the target variable - otherwise the cost grows too high
-if of_interest<=2: 
-   y_out = y_out / 20000.
+if of_interest==1:
+   norm  = 20000. 
+   y_out = y_out/norm
+elif of_interest>1:
+   y_out = np.log(y_out)
+
+print y_out
 
 print "\nBeginning model training.."
-print "y_out:\n\n",y_out[1]
+print "y_out:%.2f\n\n" % y_out[1]
 print "x_in: \n\n",x_in[1]
 print "\n\ntraining size:",x_in.shape
 
-cur_cost = 0
-acceptable_cost = 1e-5
+prev_cost = 0
+acceptable_cost = 1e-6
 
 for i in range(10000):
+   cur_cost = 0
    for k in range(len(x_in)):
-      cur_cost = f_cost(x_in[k], y_out[k])
-   if i % 50 == 0: print "Cost:",cur_cost 
+      cur_cost += f_cost(x_in[k], y_out[k])
+   ##add a catch here for if previous value was same as last one.
+   if i % 25 == 0: 
+      print "iteration: %i\t\tCost: %.2f" % (i,cur_cost) 
+      if abs(cur_cost - prev_cost) < acceptable_cost: 
+         print "no suitable minimum found"
+         break
+      prev_cost = cur_cost
    if cur_cost < acceptable_cost: 
       print "acceptable weight vectors found at iteration",i
       break
@@ -113,9 +135,26 @@ print theta1.get_value()
 print theta2.get_value()
 #print theta1
 
-print "---- Validation ----\n\nexample input [x]:", x_valid
-print "predicted %s = %i" %(targets[of_interest], int(20000*f_overall(x_valid)))
-### print costs as iterate through training epochs
-###############
+from numpy import savetxt
+savetxt('theta1_%s.txt'%targets[of_interest],theta1.get_value())
 
+print "---- Validation ----\n\nexample input [x]:", x_valid[0]
+for i in range(5):
+   if of_interest==1: 
+      print "predicted %s = %i" %(targets[of_interest], int(norm*f_overall(x_valid[i,:])))
+   elif of_interest==2:
+      print "predicted %s = %i" %(targets[of_interest], int(np.exp(f_overall(x_valid[i,:]))))
+   else:
+      print "predicted %s = %.3f %%" %(targets[of_interest], 100*np.exp(f_overall(x_valid[i,:])))
 
+predictions = []
+for i in range(x_valid.shape[0]):
+   predictions.append(np.exp(f_overall(x_valid[i,:])))
+predictions = np.array(predictions)
+
+from sklearn.metrics import r2_score
+the_score = [r2_score(y_valid,predictions)]
+
+savetxt("r2.txt", the_score)
+#with open('r2.txt','a') as fh:
+#   fh.write(the_score)
