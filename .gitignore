@@ -97,3 +97,8 @@ ENV/
 .ropeproject
 
 # End of https://www.gitignore.io/api/python
+
+#### custom ignores for this project
+data/
+outputs/
+
