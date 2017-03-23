@@ -48,8 +48,8 @@ y = T.dscalar('y')
 
 ## weight matrix -- 
 ##     input features = 30, outputs to a 8-node hidden layer
-theta1 = theano.shared(np.array(np.random.rand(301,8), dtype=theano.config.floatX))
-theta2 = theano.shared(np.array(np.random.rand(8,1), dtype=theano.config.floatX))
+theta1 = theano.shared(np.array(np.random.rand(301,12), dtype=theano.config.floatX))
+theta2 = theano.shared(np.array(np.random.rand(12,1), dtype=theano.config.floatX))
 
 
 ### hidden layer
@@ -72,13 +72,13 @@ import numpy as np
 from numpy import genfromtxt
 
 #### Manual: choose 1,2,3, or 4 here ####
-of_interest = 4
+of_interest = 3
 #########################################
 targets = {1: 'qty_amt', 2:'rev_amt', 3:'qty_share', 4:'rev_share'}
 
 print "generating model for when the target is", targets[of_interest]
 
-data = genfromtxt('sampledata_%s.csv' % targets[of_interest],delimiter=',')
+data = genfromtxt('data/sampledata/sampledata_%s.csv' % targets[of_interest],delimiter=',')
 
 data    = data[1:,2:]  # cut the header and the first two rows (identifiers)
 
@@ -91,7 +91,7 @@ x_in    = data[:,:-2]  # rank bit-vectors
 y_out   = data[:,-2]   # the target variable
 #### TODO: involve the agg1 field at data[:,-1]
 
-split_point = data.shape[0]/3
+split_point = data.shape[0]/5
 
 x_valid = x_in[-split_point:,:]   # keep one row for predicting an example output
 x_in    = x_in[:-split_point,:]  # remove validation row from input data
@@ -136,7 +136,7 @@ print theta2.get_value()
 #print theta1
 
 from numpy import savetxt
-savetxt('theta1_%s.txt'%targets[of_interest],theta1.get_value())
+savetxt('outputs/theta1/theta1_%s.txt'%targets[of_interest],theta1.get_value())
 
 print "---- Validation ----\n\nexample input [x]:", x_valid[0]
 for i in range(5):
@@ -155,8 +155,8 @@ predictions = np.array(predictions)
 from sklearn.metrics import r2_score
 the_score = [r2_score(y_valid,predictions)]
 
-savetxt("r2.txt", the_score)
-savetxt("y_pred_%s.txt"%targets[of_interest],predictions)
-savetxt("y_act_%s.txt"%targets[of_interest],y_valid)
+savetxt("outputs/r2/r2.txt", the_score)
+savetxt("outputs/y/y_pred_%s.txt"%targets[of_interest],predictions)
+savetxt("outputs/y/y_act_%s.txt"%targets[of_interest],y_valid)
 #with open('r2.txt','a') as fh:
 #   fh.write(the_score)
