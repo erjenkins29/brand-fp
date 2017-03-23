@@ -115,7 +115,7 @@ print "\n\ntraining size:",x_in.shape
 prev_cost = 0
 acceptable_cost = 1e-6
 
-for i in range(10000):
+for i in range(2000):
    cur_cost = 0
    for k in range(len(x_in)):
       cur_cost += f_cost(x_in[k], y_out[k])
@@ -156,5 +156,7 @@ from sklearn.metrics import r2_score
 the_score = [r2_score(y_valid,predictions)]
 
 savetxt("r2.txt", the_score)
+savetxt("y_pred_%s.txt"%targets[of_interest],predictions)
+savetxt("y_act_%s.txt"%targets[of_interest],y_valid)
 #with open('r2.txt','a') as fh:
 #   fh.write(the_score)
